@@ -1,3 +1,3 @@
 # BaseWars
 
-Base Wars is a game involving bases.
+README will come coon.
