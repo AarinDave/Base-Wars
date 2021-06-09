@@ -5,8 +5,8 @@ Base Wars is a game which features four teams fighting for domination through th
 ## Software Requirements
 
 Please make sure you have the current requirements to ensure the source code works.
-• Python 3.9.5
-• Pygame 2.0.1
+* Python 3.9.5
+* Pygame 2.0.1
 
 ## Rules
 
