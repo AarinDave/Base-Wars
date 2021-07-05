@@ -55,7 +55,7 @@ red_logo = pygame.image.load("Images/Selection/red_logo.png")
 green_logo = pygame.image.load("Images/Selection/green_logo.png")
 green_logo = pygame.transform.scale(green_logo, (100, 100))
 
-# blue_logo = pygame.image.load("Images/Selection/blue_logo.png")
+blue_logo = pygame.image.load("Images/Selection/blue_logo.png")
 
 # Loads all of the sounds.
 click = pygame.mixer.Sound("Sounds/click.mp3")
@@ -104,7 +104,7 @@ def display_selection():
     red_choice = screen.blit(red_logo, (WIDTH // 5 - 50, HEIGHT // 2 - 50))
     yellow_choice = pygame.draw.circle(screen, YELLOW, (WIDTH // 5 * 2, HEIGHT // 2), 50)
     green_choice = screen.blit(green_logo, (WIDTH // 5 * 3 - 50, HEIGHT // 2 - 50))
-    blue_choice = pygame.draw.circle(screen, BLUE, (WIDTH // 5 * 4, HEIGHT // 2), 50)
+    blue_choice = screen.blit(blue_logo, (WIDTH // 5 * 4 - 50, HEIGHT // 2 - 50))
 
     # Displays the text of the selection.
     display_text("Choose Your Team", WIDTH // 2, HEIGHT // 10, "white", 60, True)
@@ -144,16 +144,21 @@ def display_main():
     # Iterate through each pressed key and move the player accordingly.
     keys = pygame.key.get_pressed()
     if keys[K_w] or keys[K_UP]:
-        teams[team].move_player(player_number, 0, 1)
+        teams[player_team].move_player(player_number, 0, 1)
     if keys[K_a] or keys[K_LEFT]:
-        teams[team].move_player(player_number, -1, 0)
+        teams[player_team].move_player(player_number, -1, 0)
     if keys[K_s] or keys[K_DOWN]:
-        teams[team].move_player(player_number, 0, -1)
+        teams[player_team].move_player(player_number, 0, -1)
     if keys[K_d] or keys[K_RIGHT]:
-        teams[team].move_player(player_number, 1, 0)
-
-    for teammate in teams.values():
-        pass
+        teams[player_team].move_player(player_number, 1, 0)
+    
+    # Iterate through each team.
+    for team in teams.values():
+        # Iterate through all of the players in that team.
+        for player_id in team.players:
+            # If the team member is not the player.
+            if team.name != player_team or player_id != player_number:
+                team.move_player(player_id, 1, 0)
 
 
 # Creates a button class to easily create buttons.
@@ -175,33 +180,37 @@ class Team:
         self.base = globals()[self.name + "_base"]
         self.image = globals()[self.name + "_player"]
 
-        self.data = {player_id + 1: Rect(randint(self.base.left, self.base.right - 50),
-                                         randint(self.base.top, self.base.bottom - 50), 50, 50)
-                     for player_id in range(self.size)}
+        self.players = {player_id + 1: Rect(randint(self.base.left, self.base.right - 50),
+                                            randint(self.base.top, self.base.bottom - 50), 50, 50)
+                        for player_id in range(self.size)}
 
     def __repr__(self):
-        return f"{list(self.data.items())}"
+        return f"{list(self.players.items())}"
+
+    def __str__(self):
+        return self.name
 
     def add_player(self, rect_object=Rect(0, 0, 50, 50)):
         self.size += 1
-        self.data[self.size] = rect_object
+        self.players[self.size] = rect_object
 
     def remove_player(self, player):
         self.size -= 1
-        self.data.pop(player)
-        self.data = {player_id - (player_id > player): rect_object for player_id, rect_object in self.data.items()}
+        self.players.pop(player)
+        self.players = {player_id - (player_id > player): rect_object
+                        for player_id, rect_object in self.players.items()}
 
     def display_team(self, reset_pos=False):
         if reset_pos:
-            self.data = {player_id + 1: Rect(randint(0, WIDTH // 2 - 50), randint(0, HEIGHT // 2 - 50), 50, 50)
-                         for player_id in range(self.size)}
+            self.players = {player_id + 1: Rect(randint(0, WIDTH // 2 - 50), randint(0, HEIGHT // 2 - 50), 50, 50)
+                            for player_id in range(self.size)}
 
-        for rect_object in self.data.values():
+        for rect_object in self.players.values():
             screen.blit(self.image, rect_object.topleft)
 
     def move_player(self, player_id, x_change=0, y_change=0):
-        self.data[player_id].x += x_change
-        self.data[player_id].y -= y_change
+        self.players[player_id].x += x_change
+        self.players[player_id].y -= y_change
         # return self.data[player_id]
 
 
@@ -238,19 +247,19 @@ while True:
                 # If we are in the selection page.
                 elif stage == "selection":
                     if button_clicked(red_button):
-                        team = "red"
+                        player_team = "red"
                         stage = "countdown"
                         player_number = randint(1, 6)
                     elif button_clicked(yellow_button):
-                        team = "yellow"
+                        player_team = "yellow"
                         stage = "countdown"
                         player_number = randint(1, 6)
                     elif button_clicked(green_button):
-                        team = "green"
+                        player_team = "green"
                         stage = "countdown"
                         player_number = randint(1, 6)
                     elif button_clicked(blue_button):
-                        team = "blue"
+                        player_team = "blue"
                         stage = "countdown"
                         player_number = randint(1, 6)
 
