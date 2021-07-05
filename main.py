@@ -28,9 +28,6 @@ stage = "menu"
 last_click = ()
 countdown = 3
 
-team = ""
-player_number = randint(1, 6)
-
 # Loads and resizes the menu images.
 play = pygame.image.load("Images/Menu/play.png")
 play = pygame.transform.scale(play, (75, 75))
@@ -201,7 +198,6 @@ class Team:
 
         for rect_object in self.data.values():
             screen.blit(self.image, rect_object.topleft)
-            # pygame.draw.rect(screen, self.name, rect_object)
 
     def move_player(self, player_id, x_change=0, y_change=0):
         self.data[player_id].x += x_change
@@ -244,19 +240,19 @@ while True:
                     if button_clicked(red_button):
                         team = "red"
                         stage = "countdown"
-                        # click.play()
+                        player_number = randint(1, 6)
                     elif button_clicked(yellow_button):
                         team = "yellow"
                         stage = "countdown"
-                        # click.play()
+                        player_number = randint(1, 6)
                     elif button_clicked(green_button):
                         team = "green"
                         stage = "countdown"
-                        # click.play()
+                        player_number = randint(1, 6)
                     elif button_clicked(blue_button):
                         team = "blue"
                         stage = "countdown"
-                        # click.play()
+                        player_number = randint(1, 6)
 
     # Creates a screen based on the stage
     if stage == "main":
