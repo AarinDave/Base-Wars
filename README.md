@@ -12,9 +12,19 @@ Base Wars is expected to be released on Saturday, July 10, 2021. Until then, you
 
 Please make sure you have the current requirements to ensure the source code works.
 
+## Controls
+
+You can move the character using the arrow keys. In addition, you can move the character using WASD.
+
 ## Rules
 
-When you play the game, you are asked to select your team. The four teams to choose from are Team Red, Team Yellow, Team Green, and Team Blue. For each team, there will be six players, but they are operated through AI. Players are randomly positioned across their base after the countdown. You, as one of the selected team's players, will move using arrow keys or WASD.
+* At the start, you have to choose your team.
+* Players are randomly positioned across their base.
+* If you touch a player, that player joins your team.
+ * If the player happens to touch you also, you join the opponent's team. The opponent joins your team.
+* If the opponent touches you, you join the opponent's team.
+* Nothing happens if you touch players in your team.
+* The game ends when your team has all the players.
 
 ## Important Notice
 This README will be updated over time. The source code will be changing more though.
