@@ -2,8 +2,8 @@
 import pygame
 # Imports the constants of Pygame to improve readability.
 from pygame.locals import *
-# Imports the random module to generate random numbers
-from random import randint
+# Imports the random module to generate random numbers and values.
+from random import choice, randint, sample
 
 # Initialize the Pygame font module.
 pygame.font.init()
@@ -21,6 +21,9 @@ RED = (230, 60, 80)
 YELLOW = (230, 210, 60)
 GREEN = (60, 230, 110)
 BLUE = (60, 80, 230)
+
+# Set the values the game will use.
+SPEED = 5
 
 # Setup Variables
 stage = "menu"
@@ -51,10 +54,7 @@ blue_player = pygame.transform.scale(blue_player, (50, 50))
 # Loads and resizes the selection images.
 red_logo = pygame.image.load("Images/Selection/red_logo.png")
 # yellow_logo = pygame.image.load("Images/Selection/yellow_logo.png")
-
 green_logo = pygame.image.load("Images/Selection/green_logo.png")
-green_logo = pygame.transform.scale(green_logo, (100, 100))
-
 blue_logo = pygame.image.load("Images/Selection/blue_logo.png")
 
 # Loads all of the sounds.
@@ -96,8 +96,6 @@ def display_menu():
 
 
 def display_selection():
-    draw_bases()
-
     pygame.draw.rect(screen, "white", (100, 300, 1000, 300), border_radius=10)
 
     # Displays the team choices.
@@ -116,49 +114,50 @@ def display_selection():
     return red_choice, yellow_choice, green_choice, blue_choice
 
 
-def display_countdown():
-    global countdown, stage
-    # Starts
-    if countdown == 3:
-        countdown_sound.play()
-    # Displays the current countdown time.
-    display_text(str(countdown), MID_WIDTH, MID_HEIGHT, "white", 100, True)
-    # Decreases the countdown by one second.
-    countdown -= 1
-
-    if countdown == -1:
-        # Switches to the main game.
-        stage = "main"
-
-
 # This is the function to display the main game.
 def display_main():
-    # Draws the four bases.
-    draw_bases()
     # Draws the team members for each team.
-    teams["red"].display_team()
-    teams["yellow"].display_team()
-    teams["green"].display_team()
-    teams["blue"].display_team()
+    teams["red"].display()
+    teams["yellow"].display()
+    teams["green"].display()
+    teams["blue"].display()
 
     # Iterate through each pressed key and move the player accordingly.
     keys = pygame.key.get_pressed()
+    # If the up arrow key or w key is pressed.
     if keys[K_w] or keys[K_UP]:
-        teams[player_team].move_player(player_number, 0, 1)
+        teams[player_team].move(player_number, 0, SPEED)
+    # If the left arrow key or a key is pressed.
     if keys[K_a] or keys[K_LEFT]:
-        teams[player_team].move_player(player_number, -1, 0)
+        teams[player_team].move(player_number, -SPEED, 0)
+    # If the down arrow key or s key is pressed.
     if keys[K_s] or keys[K_DOWN]:
-        teams[player_team].move_player(player_number, 0, -1)
+        teams[player_team].move(player_number, 0, -SPEED)
+    # If the right arrow key or d key is pressed.
     if keys[K_d] or keys[K_RIGHT]:
-        teams[player_team].move_player(player_number, 1, 0)
+        teams[player_team].move(player_number, SPEED, 0)
+
+    player_rect = teams[player_team].players[player_number]
+    infected_players = {}
 
     # Iterate through each team.
     for team in teams.values():
+        # Create a new list to store the infected players for that team.
+        infected_players[team.name] = []
         # Iterate through all of the players in that team.
-        for player_id in team.players:
+        for ai_id in team.players:
             # If the team member is not the player.
-            if team.name != player_team or player_id != player_number:
-                team.move_player(player_id, 1, 0)
+            if team.name != player_team or ai_id != player_number:
+                # Moves the player based on the target position
+                team.move(ai_id, 0, 0)
+                ai_rect = team.players[ai_id]
+                if ai_rect.colliderect(player_rect) and team != player_team:
+                    infected_players[team.name].append(ai_id)
+
+    for team, infected_team in infected_players.items():
+        for ai_id in infected_team:
+            ai_rect = teams[team].remove(ai_id)
+            teams[player_team].add(ai_rect)
 
 
 # Creates a button class to easily create buttons.
@@ -184,23 +183,26 @@ class Team:
                                             randint(self.base.top, self.base.bottom - 50), 50, 50)
                         for player_id in range(self.size)}
 
+        self.targets = []
+
     def __repr__(self):
         return f"{list(self.players.items())}"
 
     def __str__(self):
         return self.name
 
-    def add_player(self, rect_object=Rect(0, 0, 50, 50)):
+    def add(self, rect_object):
         self.size += 1
         self.players[self.size] = rect_object
+        print(self.players)
 
-    def remove_player(self, player):
+    def remove(self, player):
         self.size -= 1
-        self.players.pop(player)
         self.players = {player_id - (player_id > player): rect_object
                         for player_id, rect_object in self.players.items()}
+        return self.players.pop(player)
 
-    def display_team(self, reset_pos=False):
+    def display(self, reset_pos=False):
         if reset_pos:
             self.players = {player_id + 1: Rect(randint(0, WIDTH // 2 - 50), randint(0, HEIGHT // 2 - 50), 50, 50)
                             for player_id in range(self.size)}
@@ -208,19 +210,28 @@ class Team:
         for rect_object in self.players.values():
             screen.blit(self.image, rect_object.topleft)
 
-    def move_player(self, player_id, x_change=0, y_change=0):
+    def move(self, player_id, x_change, y_change):
         self.players[player_id].x += x_change
         self.players[player_id].y -= y_change
         # return self.data[player_id]
+
+    def set_targets(self):
+        other_teams = {}
+        for variable in globals():
+            if variable.endswith("_base") and not variable.startswith(self.name):
+                other_teams[variable] = self.size
+
+        self.targets.clear()
+        for _ in range(self.size):
+            random_team = choice(sorted(other_teams))
+            random_player = randint(1, teams[random_team].size)
+            self.targets.append((random_team, random_player))
 
 
 # Setups the Pygame window with a width of 1200 pixels and a height of 800 pixels.
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 # Sets an appropriate caption for the game.
 pygame.display.set_caption("Base Wars")
-
-# Draws the bases as the background for the menu.
-draw_bases()
 
 # Creates a clock to control the frame rate.
 clock = pygame.time.Clock()
@@ -249,40 +260,58 @@ while True:
                     if button_clicked(red_button):
                         player_team = "red"
                         stage = "countdown"
-                        player_number = randint(1, 6)
                     elif button_clicked(yellow_button):
                         player_team = "yellow"
                         stage = "countdown"
-                        player_number = randint(1, 6)
                     elif button_clicked(green_button):
                         player_team = "green"
                         stage = "countdown"
-                        player_number = randint(1, 6)
                     elif button_clicked(blue_button):
                         player_team = "blue"
                         stage = "countdown"
-                        player_number = randint(1, 6)
+
+    # Draws the four bases.
+    draw_bases()
 
     # Creates a screen based on the stage
     if stage == "main":
         display_main()
+
     elif stage == "countdown":
-        draw_bases()
-        display_countdown()
+        # If we started the countdown.
+        if countdown == 3:
+            # Start the countdown sound.
+            countdown_sound.play()
+        # Displays the current countdown time.
+        display_text(str(countdown), MID_WIDTH, MID_HEIGHT, "white", 100, True)
+        # Decreases the countdown by one second.
+        countdown -= 1
+        # If the countdown falls below 0.
+        if countdown == -1:
+            # Switches to the main game.
+            stage = "main"
         # If the countdown is over.
         if countdown == 0:
             # Setup each team using the Team class.
             teams = {"red": Team("red"), "yellow": Team("yellow"), "green": Team("green"), "blue": Team("blue")}
+            # Chooses a random player in the team.
+            player_number = randint(1, teams[player_team].size)
+
     elif stage == "selection":
         red_button, yellow_button, green_button, blue_button = display_selection()
+
     elif stage == "menu":
         play_button = display_menu()
 
-    # Updates Screen
+    # Updates the screen to show the current state.
     pygame.display.update()
 
-    # Sets the frame rate
-    if stage == "countdown":
+    # Slows down the game to 90 frames per second.
+    if stage == "main":
+        clock.tick(90)
+    # Slows down the countdown to 1 frame per second.
+    elif stage == "countdown":
         clock.tick(1)
+    # Sets the frame rate to the maximum at everywhere else.
     else:
         clock.tick()
