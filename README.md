@@ -21,7 +21,7 @@ You can move the character using the arrow keys. In addition, you can move the c
 * At the start, you have to choose your team.
 * Players are randomly positioned across their base.
 * If you touch a player, that player joins your team.
- * If the player happens to touch you also, you join the opponent's team. The opponent joins your team.
+  * If the player happens to touch you also, you join the opponent's team. The opponent joins your team.
 * If the opponent touches you, you join the opponent's team.
 * Nothing happens if you touch players in your team.
 * The game ends when your team has all the players.
