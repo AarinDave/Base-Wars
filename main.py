@@ -91,7 +91,7 @@ def display_menu():
     display_text("Base Wars", WIDTH // 2, HEIGHT // 5, "white", 60, True)
     # Displays the play button
     start_button = screen.blit(play, (WIDTH // 2 - play.get_width() // 2, HEIGHT // 2 - play.get_height() // 2))
-    # settings_button = screen.blit(settings, (WIDTH // 2 - play.get_width() // 2, HEIGHT // 2 - play.get_height() // 2))
+    # settings_button = screen.blit(settings, (WIDTH // 2 - settings.get_width() // 2, HEIGHT // 2 - settings.get_height() // 2))
     return start_button
 
 
@@ -194,13 +194,13 @@ class Team:
     def add(self, rect_object):
         self.size += 1
         self.players[self.size] = rect_object
-        print(self.players)
 
     def remove(self, player):
         self.size -= 1
+        rect_object = self.players.pop(player)
         self.players = {player_id - (player_id > player): rect_object
                         for player_id, rect_object in self.players.items()}
-        return self.players.pop(player)
+        return rect_object
 
     def display(self, reset_pos=False):
         if reset_pos:
