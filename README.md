@@ -10,7 +10,7 @@ Base Wars is expected to be released on Saturday, July 10, 2021. Until then, you
 * Python 3.9.6
   * Pygame 2.0.1
 
-Please make sure you have the current requirements to ensure the source code works.
+Please make sure you have the current requirements to ensure the source code works. While there is a possibility it can work with older versions, it is recommended to upgrade to meet the requirements.
 
 ## Controls
 
