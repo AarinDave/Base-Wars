@@ -23,7 +23,7 @@ GREEN = (60, 230, 110)
 BLUE = (60, 80, 230)
 
 # Set the values the game will use.
-SPEED = 5
+SPEED = 1
 
 # Setup Variables
 stage = "menu"
@@ -117,10 +117,9 @@ def display_selection():
 # This is the function to display the main game.
 def display_main():
     # Draws the team members for each team.
-    teams["red"].display()
-    teams["yellow"].display()
-    teams["green"].display()
-    teams["blue"].display()
+    for team in teams:
+        teams[team].display()
+        teams[team].set_targets()
 
     # Iterate through each pressed key and move the player accordingly.
     keys = pygame.key.get_pressed()
@@ -137,27 +136,61 @@ def display_main():
     if keys[K_d] or keys[K_RIGHT]:
         teams[player_team].move(player_number, SPEED, 0)
 
-    player_rect = teams[player_team].players[player_number]
-    infected_players = {}
+    """
+    Go through each team.
+        Go through each player of that team.
+            Check if the player is not the user.
+                Move the player towards its target player.
+                    If the player is touching anyone else in the team.
+                        Add the player to the dictionary.
+    """
+
+    infected_players = {team: [] for team in teams}
 
     # Iterate through each team.
     for team in teams.values():
-        # Create a new list to store the infected players for that team.
-        infected_players[team.name] = []
-        # Iterate through all of the players in that team.
-        for ai_id in team.players:
-            # If the team member is not the player.
-            if team.name != player_team or ai_id != player_number:
-                # Moves the player based on the target position
-                team.move(ai_id, 0, 0)
-                ai_rect = team.players[ai_id]
-                if ai_rect.colliderect(player_rect) and team != player_team:
-                    infected_players[team.name].append(ai_id)
+        # Iterate through each player of that team.
+        for ai_id, ai_rect in team.players.items():
+            # Checks if the current player is not the user.
+            if (team.name, ai_id) != (player_team, player_number):
+                # print(team.name, ai_id)
+                # Identify the target player.
+                target_team, target_id = team.targets[ai_id-1]
+                target_player = teams[target_team].players[target_id]
 
-    for team, infected_team in infected_players.items():
-        for ai_id in infected_team:
-            ai_rect = teams[team].remove(ai_id)
-            teams[player_team].add(ai_rect)
+                # Moves the player according to the position of the target player.
+                team.move(ai_id,
+                          SPEED if ai_rect.x < target_player.x else -SPEED,
+                          SPEED if ai_rect.y < target_player.y else -SPEED)
+
+                for players in teams.values():
+                    collision = ai_rect.collidedict(players.players, True)
+                    if players.name != team.name and collision:
+                        infected_players[players.name].append((players.name, *collision))
+
+    for team, target in infected_players.items():
+        for target_team, target_id, target_player in target:
+            teams[target_team].remove(target_id)
+            teams[team].add(target_player)
+
+    # # Iterate through each team.
+    # for team in teams.values():
+    #     # Create a new list to store the infected players for that team.
+    #     infected_players[team.name] = []
+    #     # Iterate through all of the players in that team.
+    #     for ai_id in team.players:
+    #         # If the team member is not the player.
+    #         if team.name != player_team or ai_id != player_number:
+    #             # Moves the player based on the target position
+    #             team.move(ai_id, 0, 0)
+    #             ai_rect = team.players[ai_id]
+    #             if ai_rect.colliderect(player_rect) and team != player_team:
+    #                 infected_players[team.name].append(ai_id)
+    #
+    # for team, infected_team in infected_players.items():
+    #     for ai_id in infected_team:
+    #         ai_rect = teams[team].remove(ai_id)
+    #         teams[player_team].add(ai_rect)
 
 
 # Creates a button class to easily create buttons.
@@ -183,6 +216,7 @@ class Team:
                                             randint(self.base.top, self.base.bottom - 50), 50, 50)
                         for player_id in range(self.size)}
 
+        self.other_teams = {}
         self.targets = []
 
     def __repr__(self):
@@ -194,6 +228,11 @@ class Team:
     def add(self, rect_object):
         self.size += 1
         self.players[self.size] = rect_object
+
+        #
+        random_team = choice(sorted(self.other_teams))
+        random_player = randint(1, teams[random_team].size)
+        self.targets.append((random_team, random_player))
 
     def remove(self, player):
         self.size -= 1
@@ -207,8 +246,12 @@ class Team:
             self.players = {player_id + 1: Rect(randint(0, WIDTH // 2 - 50), randint(0, HEIGHT // 2 - 50), 50, 50)
                             for player_id in range(self.size)}
 
-        for rect_object in self.players.values():
+        for ai_id, rect_object in self.players.items():
             screen.blit(self.image, rect_object.topleft)
+            if (self.name, ai_id) == (player_team, player_number):
+                display_text(f"You", *rect_object.midtop, "yellow", 15, True)
+            else:
+                display_text(f"Player {ai_id}", *rect_object.midtop, "white", 15, True)
 
     def move(self, player_id, x_change, y_change):
         self.players[player_id].x += x_change
@@ -216,16 +259,23 @@ class Team:
         # return self.data[player_id]
 
     def set_targets(self):
-        other_teams = {}
-        for variable in globals():
-            if variable.endswith("_base") and not variable.startswith(self.name):
-                other_teams[variable] = self.size
+        self.other_teams = {team: teams[team].size for team in teams if team != player_team}
 
-        self.targets.clear()
-        for _ in range(self.size):
-            random_team = choice(sorted(other_teams))
-            random_player = randint(1, teams[random_team].size)
-            self.targets.append((random_team, random_player))
+        # If there currently are targets.
+        if self.targets:
+            targets = []
+            for target_team, target_id in self.targets:
+                if teams[target_team].size < target_id:
+                    target_id = randint(1, teams[target_team].size)
+                targets.append((target_team, target_id))
+            self.targets = targets.copy()
+
+        # If there are no targets.
+        else:
+            for _ in range(self.size):
+                random_team = choice(sorted(self.other_teams))
+                random_player = randint(1, teams[random_team].size)
+                self.targets.append((random_team, random_player))
 
 
 # Setups the Pygame window with a width of 1200 pixels and a height of 800 pixels.
