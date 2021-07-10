@@ -125,6 +125,7 @@ def display_main():
 
     # Iterate through each pressed key and move the player accordingly.
     keys = pygame.key.get_pressed()
+
     # If the up arrow key or w key is pressed.
     if keys[K_w] or keys[K_UP]:
         teams[player_team].move(player_number, 0, SPEED)
@@ -215,10 +216,22 @@ class Team:
         self.targets.append((random_team, random_player))
 
     def remove(self, player):
+        global player_number
+
         self.size -= 1
         rect_object = self.players.pop(player)
-        self.players = {player_id - (player_id > player): rect_object
-                        for player_id, rect_object in self.players.items()}
+
+        new_players = self.players.copy()
+        for player_id, player_rect in self.players.items():
+            if player_id < player:
+                new_players[player_id] = player_rect
+            else:
+                if player_id == player_number:
+                    player_number -= 1
+                new_players[player_id - 1] = player_rect
+
+        self.players = new_players.copy()
+
         return rect_object
 
     def display(self, reset_pos=False):
