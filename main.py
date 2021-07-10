@@ -3,7 +3,7 @@ import pygame
 # Imports the constants of Pygame to improve readability.
 from pygame.locals import *
 # Imports the random module to generate random numbers and values.
-from random import choice, randint, sample
+from random import choice, randint
 
 # Initialize the Pygame font module.
 pygame.font.init()
@@ -62,7 +62,7 @@ click = pygame.mixer.Sound("Sounds/click.mp3")
 countdown_sound = pygame.mixer.Sound("Sounds/countdown.wav")
 
 
-def button_clicked(rect_object, circle=False):
+def button_clicked(rect_object):
     return event.pos[0] in range(rect_object.left, rect_object.right + 1) and \
            event.pos[1] in range(rect_object.top, rect_object.bottom + 1)
 
@@ -116,10 +116,12 @@ def display_selection():
 
 # This is the function to display the main game.
 def display_main():
+    global player_team, player_number
+
     # Draws the team members for each team.
-    for team in teams:
-        teams[team].display()
-        teams[team].set_targets()
+    for attacking_team in teams:
+        teams[attacking_team].display()
+        teams[attacking_team].set_targets()
 
     # Iterate through each pressed key and move the player accordingly.
     keys = pygame.key.get_pressed()
@@ -136,61 +138,39 @@ def display_main():
     if keys[K_d] or keys[K_RIGHT]:
         teams[player_team].move(player_number, SPEED, 0)
 
-    """
-    Go through each team.
-        Go through each player of that team.
-            Check if the player is not the user.
-                Move the player towards its target player.
-                    If the player is touching anyone else in the team.
-                        Add the player to the dictionary.
-    """
-
     infected_players = {team: [] for team in teams}
 
     # Iterate through each team.
-    for team in teams.values():
+    for attacking_team in teams.values():
         # Iterate through each player of that team.
-        for ai_id, ai_rect in team.players.items():
+        for ai_id, ai_rect in attacking_team.players.items():
             # Checks if the current player is not the user.
-            if (team.name, ai_id) != (player_team, player_number):
-                # print(team.name, ai_id)
+            if (attacking_team.name, ai_id) != (player_team, player_number):
                 # Identify the target player.
-                target_team, target_id = team.targets[ai_id-1]
-                target_player = teams[target_team].players[target_id]
+                target_team, target_id = attacking_team.targets[ai_id - 1]
+                target_rect = teams[target_team].players[target_id]
 
                 # Moves the player according to the position of the target player.
-                team.move(ai_id,
-                          SPEED if ai_rect.x < target_player.x else -SPEED,
-                          SPEED if ai_rect.y < target_player.y else -SPEED)
+                attacking_team.move(ai_id,
+                                    SPEED if ai_rect.x < target_rect.x else -SPEED,
+                                    SPEED if ai_rect.y < target_rect.y else -SPEED)
 
-                for players in teams.values():
-                    collision = ai_rect.collidedict(players.players, True)
-                    if players.name != team.name and collision:
-                        infected_players[players.name].append((players.name, *collision))
+                for team_to_check_collision in teams.values():
+                    if team_to_check_collision.name != attacking_team.name:
+                        teammates = team_to_check_collision.players.copy()
+                        collided = ai_rect.collidedict(teammates, True)
+                        if collided:
+                            information = (team_to_check_collision.name, *collided)
+                            if information not in infected_players[attacking_team.name]:
+                                infected_players[attacking_team.name].append(information)
 
-    for team, target in infected_players.items():
-        for target_team, target_id, target_player in target:
+    for team, targets in infected_players.items():
+        for target_team, target_id, target_rect in targets:
+            if (target_team, target_id) == (player_team, player_number):
+                player_team = target_team
+                player_number = target_id
+            teams[team].add(target_rect)
             teams[target_team].remove(target_id)
-            teams[team].add(target_player)
-
-    # # Iterate through each team.
-    # for team in teams.values():
-    #     # Create a new list to store the infected players for that team.
-    #     infected_players[team.name] = []
-    #     # Iterate through all of the players in that team.
-    #     for ai_id in team.players:
-    #         # If the team member is not the player.
-    #         if team.name != player_team or ai_id != player_number:
-    #             # Moves the player based on the target position
-    #             team.move(ai_id, 0, 0)
-    #             ai_rect = team.players[ai_id]
-    #             if ai_rect.colliderect(player_rect) and team != player_team:
-    #                 infected_players[team.name].append(ai_id)
-    #
-    # for team, infected_team in infected_players.items():
-    #     for ai_id in infected_team:
-    #         ai_rect = teams[team].remove(ai_id)
-    #         teams[player_team].add(ai_rect)
 
 
 # Creates a button class to easily create buttons.
@@ -333,19 +313,17 @@ while True:
             # Start the countdown sound.
             countdown_sound.play()
         # Displays the current countdown time.
-        display_text(str(countdown), MID_WIDTH, MID_HEIGHT, "white", 100, True)
-        # Decreases the countdown by one second.
-        countdown -= 1
+        display_text(str(countdown) if countdown > 0 else "GO", MID_WIDTH, MID_HEIGHT, "white", 100, True)
         # If the countdown falls below 0.
         if countdown == -1:
-            # Switches to the main game.
-            stage = "main"
-        # If the countdown is over.
-        if countdown == 0:
             # Setup each team using the Team class.
             teams = {"red": Team("red"), "yellow": Team("yellow"), "green": Team("green"), "blue": Team("blue")}
             # Chooses a random player in the team.
             player_number = randint(1, teams[player_team].size)
+            # Switches to the main game.
+            stage = "main"
+        # Decreases the countdown by one second.
+        countdown -= 1
 
     elif stage == "selection":
         red_button, yellow_button, green_button, blue_button = display_selection()
