@@ -3,7 +3,7 @@
 Base Wars is a game which features four teams fighting for domination through the use of tagging. This game is similar to Infection, but there are some twists to it. For example, having four teams means you can take back someone once they are in the other team.
 
 ## Expected Release Date
-The first version of Base Wars will be released Saturday, July 10, 2021. The versions that follow will be mainly bug fixes and performance improvements.
+The first official version of Base Wars will be released on a to-be decided date.
 
 ## Languages Used
 
@@ -25,6 +25,12 @@ You can move the character using the arrow keys. In addition, you can move the c
 * If the opponent touches you, you join the opponent's team.
 * Nothing happens if you touch players in your team.
 * The game ends when your team has all the players.
+
+## Expected Changes for July
+
+* More menu buttons
+  * Credits
+  * How to Play 
 
 ## Important Notice
 This README will be updated over time. The source code will be changing more though.
