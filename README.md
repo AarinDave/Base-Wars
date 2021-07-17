@@ -32,5 +32,7 @@ You can move the character using the arrow keys. In addition, you can move the c
   * Credits
   * How to Play 
 
-## Important Notice
-This README will be updated over time. The source code will be changing more though.
+## Important Information
+
+Last source code update: July 10, 2021
+Last README update: July 17, 2021
