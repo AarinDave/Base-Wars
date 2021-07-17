@@ -34,5 +34,5 @@ You can move the character using the arrow keys. In addition, you can move the c
 
 ## Important Information
 
-Last source code update: July 10, 2021
-Last README update: July 17, 2021
+* Last source code update: July 10, 2021
+* Last README update: July 17, 2021
